@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-stats
+  namespace: blockscout
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-blockscout-stats
+  template:
+    metadata:
+      labels:
+        app: payment-blockscout-stats
+    spec:
+      containers:
+        - name: blockscout-stack-stats
+          image: "ghcr.io/blockscout/stats:latest"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8050
+              protocol: TCP
+            - name: http-metrics
+              containerPort: 6060
+              protocol: TCP
+          env:
+          - name: STATS__DB_URL
+            valueFrom:
+              secretKeyRef:
+                name: postgres
+                key: stat_url
+          - name: STATS__BLOCKSCOUT_DB_URL
+            valueFrom:
+              secretKeyRef:
+                name: postgres
+                key: master_url
+          - name: STATS__CREATE_DATABASE
+            value: "true"
+          - name: STATS__RUN_MIGRATIONS
+            value: "true"
+          - name: STATS__BLOCKSCOUT_API_URL
+            value: "http://svc-payment-blockscout.blockscout.svc.cluster.local:80"
+          - name: STATS__SERVER__HTTP__CORS__ENABLED
+            value: "true"
+          - name: STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN
+            value: "https://explorer.payment.dsrvlabs.dev"
+          - name: STATS__SERVER__HTTP__CORS__ALLOWED_METHODS
+            value: "GET, POST, PUT, DELETE, OPTIONS"
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 100
+            timeoutSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-payment-blockscout-stats
+  namespace: blockscout
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: payment-blockscout-stats

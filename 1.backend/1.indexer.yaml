@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-blockscout-indexer
+  namespace: blockscout
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-blockscout-indexer
+  template:
+    metadata:
+      labels:
+        app: payment-blockscout-indexer
+    spec:
+      containers:
+        - name: blockscout-stack-blockscout
+          image: "blockscout/blockscout:6.8.0.commit.8ce08ee5-indexer"
+          imagePullPolicy: IfNotPresent
+          command:  
+            - /bin/sh
+          args: 
+            - -c
+            - bin/blockscout start
+          ports:
+            - name: http
+              containerPort: 4000
+              protocol: TCP
+          env:
+          - name: APPLICATION_MODE
+            value: "indexer"
+          - name: PORT
+            value: "4000"
+          - name: CHAIN_ID
+            value: "815"
+          - name: DISABLE_WEBAPP
+            value: "true"
+          - name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: postgres
+                key: master_url
+
+          - name: DISABLE_EXCHANGE_RATES
+            value: "true"
+          - name: ETHEREUM_JSONRPC_HTTP_URL
+            value: "http://10.178.0.63:8545"
+          - name: ETHEREUM_JSONRPC_TRACE_URL
+            value: "http://10.178.0.63:8545"
+          - name: ETHEREUM_JSONRPC_VARIANT
+            value: "geth"
+          - name: ETHEREUM_JSONRPC_WS_URL
+            value: "ws://10.178.15.193:8546"
+          - name: INDEXER_MEMORY_LIMIT
+            value: "8Gi"
+
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health/readiness
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 60
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health/liveness
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 100
+            periodSeconds: 100
+            timeoutSeconds: 30
+      terminationGracePeriodSeconds: 10

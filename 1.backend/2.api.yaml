@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-blockscout
+  namespace: blockscout
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-blockscout
+  template:
+    metadata:
+      labels:
+        app: payment-blockscout
+    spec:
+      containers:
+        - name: blockscout-stack-blockscout
+          image: "blockscout/blockscout:6.8.0.commit.8ce08ee5-api"
+          imagePullPolicy: IfNotPresent
+          command:  
+            - /bin/sh
+          args: 
+            - -c
+            - bin/blockscout start
+          ports:
+            - name: http
+              containerPort: 4000
+              protocol: TCP
+          env:
+          - name: APPLICATION_MODE
+            value: "api"
+          - name: PORT
+            value: "4000"
+          - name: CHAIN_ID
+            value: "815"
+          - name: COIN
+            value: "ETH"
+          - name: COIN_NAME
+            value: "ETH"
+          - name: API_V2_ENABLED
+            value: "true"
+          - name: MICROSERVICE_ACCOUNT_ABSTRACTION_ENABLED
+            value: 'true'
+          - name: MICROSERVICE_ACCOUNT_ABSTRACTION_URL
+            value: "https://chart-example-stats.local"
+          - name: DISABLE_INDEXER
+            value: "true"
+          - name: DISABLE_WEBAPP
+            value: "true"
+          - name: CHECK_ORIGIN
+            value: "false"
+          - name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: postgres
+                key: master_url
+          - name: DATABASE_READ_ONLY_API_URL
+            valueFrom:
+              secretKeyRef:
+                name: postgres
+                key: replica_url
+          - name: DISABLE_EXCHANGE_RATES
+            value: "true"
+          - name: ETHEREUM_JSONRPC_HTTP_URL
+            value: "http://10.178.0.63:8545"
+          - name: ETHEREUM_JSONRPC_TRACE_URL
+            value: "http://10.178.0.63:8545"
+          - name: ETHEREUM_JSONRPC_VARIANT
+            value: "geth"
+          - name: SECRET_KEY_BASE
+            valueFrom:
+              secretKeyRef:
+                name: keybase
+                key: secret
+
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health/readiness
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health/liveness
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 10
+
+      terminationGracePeriodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-payment-blockscout
+  namespace: blockscout
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: payment-blockscout
+
