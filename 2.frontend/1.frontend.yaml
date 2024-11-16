@@ -1,0 +1,223 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-frontend
+  namespace: blockscout
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payment-frontend
+      release: production
+  template:
+    metadata:
+      labels:
+        app: payment-frontend
+        release: production
+    spec:
+      containers:
+        - name: blockscout-stack-frontend
+          image: "ghcr.io/blockscout/frontend:v1.35.2"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+          - name: NEXT_PUBLIC_NETWORK_ID
+            value: "815"
+          - name: NEXT_PUBLIC_NETWORK_NAME
+            value: "Payment"
+          - name: NEXT_PUBLIC_NETWORK_SHORT_NAME
+            value: "Payment"
+          - name: NEXT_PUBLIC_NETWORK_CURRENCY_NAME
+            value: "Ether"
+          - name: NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL
+            value: "ETH"
+          - name: NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS
+            value: "18"
+
+          - name: NEXT_PUBLIC_APP_PROTOCOL
+            value: "https"
+          - name: NEXT_PUBLIC_APP_HOST
+            value: "explorer.payment.dsrvlabs.dev"
+          - name: NEXT_PUBLIC_STATS_API_HOST
+            value: "https://api-blockscout-canary.payment.dsrvlabs.dev"
+
+            #- name: NEXT_PUBLIC_HAS_USER_OPS
+            #  value: 'true'
+
+          - name: NEXT_PUBLIC_API_PROTOCOL
+            value: "https"
+          - name: NEXT_PUBLIC_API_HOST
+            value: "explorer.payment.dsrvlabs.dev"
+          - name: NEXT_PUBLIC_API_PORT
+            value: "443"
+          - name: NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL
+            value: "wss"
+
+          - name: NEXT_PUBLIC_AD_BANNER_PROVIDER
+            value: "none"
+          - name: NEXT_PUBLIC_AD_TEXT_PROVIDER
+            value: "none"
+
+          # UI
+          - name: NEXT_PUBLIC_NETWORK_LOGO
+            value: "https://raw.githubusercontent.com/dsrvlabs/payment-meta/refs/heads/main/logo.png"
+          - name: NEXT_PUBLIC_NETWORK_LOGO_DARK
+            value: "https://raw.githubusercontent.com/dsrvlabs/payment-meta/refs/heads/main/logo.png"
+
+          - name: NEXT_PUBLIC_NETWORK_ICON
+            value: "https://raw.githubusercontent.com/dsrvlabs/payment-meta/refs/heads/main/favicon.png"
+          - name: NEXT_PUBLIC_NETWORK_ICON_DARK
+            value: "https://raw.githubusercontent.com/dsrvlabs/payment-meta/refs/heads/main/favicon.png"
+
+          - name: NEXT_PUBLIC_BRIDGED_TOKENS_CHAINS
+            value: "[{'id':'1','title':'Ethereum','short_title':'ETH','base_url':'https://eth.blockscout.com/token'}]"
+          - name: NEXT_PUBLIC_BRIDGED_TOKENS_BRIDGES
+            value: "[{'type':'omni','title':'OmniBridge','short_title':'OMNI'}]"
+
+          #- name: FAVICON_MASTER_URL
+          #  value: "https://raw.githubusercontent.com/dsrvlabs/payment-meta/1f62d5f9cb583cc6c972c0e13fd9e159d41b533f/favicon.png"
+
+          readinessProbe:
+            httpGet:
+              path: /api/healthz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/healthz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 100
+            timeoutSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-frontend-canary
+  namespace: blockscout
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-frontend
+      release: canary
+  template:
+    metadata:
+      labels:
+        app: payment-frontend
+        release: canary
+    spec:
+      containers:
+        - name: blockscout-stack-frontend
+          image: "ghcr.io/blockscout/frontend:v1.35.2"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+          - name: NEXT_PUBLIC_NETWORK_ID
+            value: "815"
+          - name: NEXT_PUBLIC_NETWORK_NAME
+            value: "Payment"
+          - name: NEXT_PUBLIC_NETWORK_SHORT_NAME
+            value: "Payment"
+          - name: NEXT_PUBLIC_NETWORK_CURRENCY_NAME
+            value: "Ether"
+          - name: NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL
+            value: "ETH"
+          - name: NEXT_PUBLIC_NETWORK_CURRENCY_DECIMALS
+            value: "18"
+
+          - name: NEXT_PUBLIC_APP_PROTOCOL
+            value: "https"
+          - name: NEXT_PUBLIC_APP_HOST
+            value: "explorer-canary.payment.dsrvlabs.dev"
+          - name: NEXT_PUBLIC_STATS_API_HOST
+            value: "https://api-blockscout-canary.payment.dsrvlabs.dev"
+
+            #- name: NEXT_PUBLIC_HAS_USER_OPS
+            #  value: 'true'
+
+          - name: NEXT_PUBLIC_API_PROTOCOL
+            value: "https"
+          - name: NEXT_PUBLIC_API_HOST
+            value: "explorer-canary.payment.dsrvlabs.dev"
+          - name: NEXT_PUBLIC_API_PORT
+            value: "443"
+          - name: NEXT_PUBLIC_API_WEBSOCKET_PROTOCOL
+            value: "wss"
+
+          - name: NEXT_PUBLIC_AD_BANNER_PROVIDER
+            value: "none"
+          - name: NEXT_PUBLIC_AD_TEXT_PROVIDER
+            value: "none"
+
+          # UI
+          - name: NEXT_PUBLIC_NETWORK_LOGO
+            value: "https://raw.githubusercontent.com/dsrvlabs/payment-meta/refs/heads/main/logo.png"
+          - name: NEXT_PUBLIC_NETWORK_LOGO_DARK
+            value: "https://raw.githubusercontent.com/dsrvlabs/payment-meta/refs/heads/main/logo.png"
+
+          - name: NEXT_PUBLIC_NETWORK_ICON
+            value: "https://raw.githubusercontent.com/dsrvlabs/payment-meta/1f62d5f9cb583cc6c972c0e13fd9e159d41b533f/favicon.png"
+          - name: NEXT_PUBLIC_NETWORK_ICON_DARK
+            value: "https://raw.githubusercontent.com/dsrvlabs/payment-meta/1f62d5f9cb583cc6c972c0e13fd9e159d41b533f/favicon.png"
+          #- name: FAVICON_MASTER_URL
+          #  value: "https://raw.githubusercontent.com/dsrvlabs/payment-meta/1f62d5f9cb583cc6c972c0e13fd9e159d41b533f/favicon.png"
+
+          readinessProbe:
+            httpGet:
+              path: /api/healthz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/healthz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 100
+            timeoutSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-payment-frontend
+  namespace: blockscout
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: payment-frontend
+    release: production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-payment-frontend-canary
+  namespace: blockscout
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: payment-frontend
+    release: canary
